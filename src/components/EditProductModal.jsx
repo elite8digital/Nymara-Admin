@@ -108,6 +108,7 @@ export default function EditProductModal({ product, onClose, onSave }) {
       color: product.color || "",
       size: product.size || "",
       variantLabel: product.variantLabel || "",
+      rating: product.rating ?? 0,
     });
 
     setPrices(product.prices || {});
@@ -735,6 +736,23 @@ console.log("=========================================");
             <label className="flex items-center gap-2"><input name="isFeatured" type="checkbox" checked={!!form.isFeatured} onChange={handleFormChange} /> Featured</label>
           </div>
 
+          <div className="flex flex-col">
+    <label className="text-sm font-semibold text-gray-700 mb-1">
+      Rating (0 – 5)
+    </label>
+    <input
+      name="rating"
+      type="number"
+      min="0"
+      max="5"
+      step="0.1"
+      value={form.rating ?? 0}
+      onChange={handleFormChange}
+      className="border p-2 rounded"
+      placeholder="e.g. 4.5"
+    />
+  </div>
+
           {/* METAL */}
           <div className="border p-4 rounded">
             <h4 className="font-semibold mb-2">Metal</h4>
@@ -816,6 +834,8 @@ console.log("=========================================");
 
             <div className="mt-2 text-sm text-gray-700">Gemstone cost preview (auto rates): <b>₹{Number(gemstonesPreview).toLocaleString()}</b></div>
           </div>
+
+         
 
           {/* DIAMONDS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
