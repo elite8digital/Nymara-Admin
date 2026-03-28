@@ -1,4 +1,5 @@
 
+
 // import { Dialog } from "@headlessui/react";
 // import { useEffect, useState } from "react";
 // import axios from "axios";
@@ -192,21 +193,24 @@
 //                   <tr>
 //                     <th className="p-2 border">SKU</th>
 //                     <th className="p-2 border">Name</th>
+//                     <th className="p-2 border">Metal Type</th>
+//                     <th className="p-2 border">Purity</th>
 //                     <th className="p-2 border">Variant</th>
 //                     <th className="p-2 border">Qty</th>
-//                     <th className="p-2 border">Price</th>
-//                     <th className="p-2 border">Total</th>
+                 
 //                   </tr>
 //                 </thead>
 //                 <tbody>
 //                   {order.orderItems.map((item, idx) => (
 //                     <tr key={idx} className="text-center">
-//                       <td className="p-2 border font-mono text-xs">{item.productSKU}</td>
-//                       <td className="p-2 border">{item.productName}</td>
+//                       <td className="p-2 border font-mono text-xs">{item.productSKU || "—"}</td>
+//                       <td className="p-2 border">{item.productName || "—"}</td>
+//                       <td className="p-2 border text-gray-600">{item.metalType || "—"}</td>
+//                       <td className="p-2 border text-gray-600">{item.purity || "—"}</td>
 //                       <td className="p-2 border text-gray-500">{item.variant || "—"}</td>
 //                       <td className="p-2 border">{item.quantity}</td>
-//                       <td className="p-2 border">{item.currency} {item.displayPrice}</td>
-//                       <td className="p-2 border font-medium">{item.currency} {item.total}</td>
+                     
+                     
 //                     </tr>
 //                   ))}
 //                 </tbody>
@@ -248,6 +252,7 @@ export default function AdminOrderModal({
 }) {
   const [status, setStatus] = useState(order?.status || "");
   const [deliveryLink, setDeliveryLink] = useState(order?.deliveryLink || "");
+  const [receiptLink, setReceiptLink] = useState(order?.receiptLink || "");
   const [loading, setLoading] = useState(false);
 
   // Reset state when modal opens with new order
@@ -255,6 +260,7 @@ export default function AdminOrderModal({
     if (open && order) {
       setStatus(order.status || "");
       setDeliveryLink(order.deliveryLink || "");
+      setReceiptLink(order.receiptLink || "");
     }
   }, [open, order?.orderId]);
 
@@ -265,7 +271,7 @@ export default function AdminOrderModal({
       setLoading(true);
       const res = await axios.put(
         `${API_URL}/api/admin/${order.orderId}/status`,
-        { status, deliveryLink }, // ✅ send both status + deliveryLink
+        { status, deliveryLink, receiptLink },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -336,6 +342,18 @@ export default function AdminOrderModal({
                 />
               </div>
 
+              {/* Receipt Link */}
+              <div className="flex items-center gap-3">
+                <label className="font-medium">Receipt Link:</label>
+                <input
+                  type="text"
+                  value={receiptLink}
+                  onChange={(e) => setReceiptLink(e.target.value)}
+                  placeholder="https://receipt-url.com/..."
+                  className="border rounded p-2 flex-1"
+                />
+              </div>
+
               <button
                 onClick={handleUpdateStatus}
                 disabled={loading}
@@ -365,6 +383,19 @@ export default function AdminOrderModal({
                     className="text-blue-600 underline"
                   >
                     Track Package
+                  </a>
+                </p>
+              )}
+              {order.receiptLink && (
+                <p>
+                  <span className="font-medium">Receipt Link:</span>{" "}
+                  <a
+                    href={order.receiptLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    View Receipt
                   </a>
                 </p>
               )}
@@ -430,7 +461,8 @@ export default function AdminOrderModal({
                     <th className="p-2 border">Purity</th>
                     <th className="p-2 border">Variant</th>
                     <th className="p-2 border">Qty</th>
-                 
+                    <th className="p-2 border">Price</th>
+                    <th className="p-2 border">Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -442,8 +474,14 @@ export default function AdminOrderModal({
                       <td className="p-2 border text-gray-600">{item.purity || "—"}</td>
                       <td className="p-2 border text-gray-500">{item.variant || "—"}</td>
                       <td className="p-2 border">{item.quantity}</td>
-                     
-                     
+                      <td className="p-2 border">
+                        {item.currency || "₹"}{" "}
+                        {item.displayPrice != null ? Number(item.displayPrice).toLocaleString() : "—"}
+                      </td>
+                      <td className="p-2 border font-medium">
+                        {item.currency || "₹"}{" "}
+                        {item.total != null ? Number(item.total).toLocaleString() : "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -469,5 +507,6 @@ export default function AdminOrderModal({
     </Dialog>
   );
 }
+
 
 
