@@ -1,35 +1,8 @@
+
+
 // import { useEffect, useState } from "react";
 // import axios from "axios";
-// import AdminOrderModal from "../components/AdminOrderModal.jsx"
-
-// const mockOrders = [
-//   {
-//     _id: "mock1",
-//     orderId: "OD101",
-//     customer: { name: "Amit Kumar", customerId: "BOF001", email: "amit@example.com", phone: "9999999999" },
-//     totalAmount: 2999,
-//     status: "Pending",
-//     paymentStatus: "Pending",
-//     orderDate: new Date("2025-09-20"),
-//     orderItems: [{ productName: "Ring", productSKU: "SKU101", quantity: 1, displayPrice: 2999, total: 2999, currency: "₹" }],
-//     shippingAddress: { city: "Mumbai", state: "MH", addressLine1: "123 Street", pincode: "400001" },
-//     billUrl: "",
-//     orderSummary: { totalItems: 2, totalAmount: 2999, currency: "₹" }
-//   },
-//   {
-//     _id: "mock2",
-//     orderId: "OD102",
-//     customer: { name: "Priya Sharma", customerId: "BOF002", email: "priya@example.com", phone: "8888888888" },
-//     totalAmount: 7499,
-//     status: "Confirmed",
-//     paymentStatus: "Paid",
-//     orderDate: new Date("2025-09-22"),
-//     orderItems: [{ productName: "Necklace", productSKU: "SKU202", quantity: 1, displayPrice: 7499, total: 7499, currency: "₹" }],
-//     shippingAddress: { city: "Delhi", state: "DL", addressLine1: "456 Road", pincode: "110001" },
-//     billUrl: "https://example.com/bill-OD102.pdf",
-//     orderSummary: { totalItems: 1, totalAmount: 7499, currency: "₹" }
-//   }
-// ];
+// import AdminOrderModal from "../components/AdminOrderModal.jsx";
 
 // const API_URL = import.meta.env.VITE_API_URL;
 
@@ -37,24 +10,18 @@
 //   const [orders, setOrders] = useState([]);
 //   const [loading, setLoading] = useState(true);
 //   const [selectedOrder, setSelectedOrder] = useState(null);
+//   const [detailLoading, setDetailLoading] = useState(false);
 
-//   // Fetch orders (API or mock fallback)
+//   // Fetch all orders summary
 //   useEffect(() => {
 //     const fetchOrders = async () => {
 //       try {
-//         const res = await axios.get(`${API_URL}/api/admin/orders`, {
+//         const res = await axios.get(`${API_URL}/api/admin/`, {
 //           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
 //         });
-
-//         if (res.data?.orders?.length > 0) {
-//           setOrders(res.data.orders);
-//         } else {
-//           console.warn("⚠️ No API data, using mock orders");
-//           setOrders(mockOrders);
-//         }
+//         setOrders(res.data?.orders || []);
 //       } catch (err) {
 //         console.error("❌ Error fetching orders:", err.response?.data || err.message);
-//         setOrders(mockOrders);
 //       } finally {
 //         setLoading(false);
 //       }
@@ -63,23 +30,27 @@
 //     fetchOrders();
 //   }, []);
 
-//   // Handle bill upload (mock/local)
-//   const handleUploadBill = (id) => {
-//     const link = prompt("Enter bill URL:");
-//     if (link) {
-//       setOrders((prev) =>
-//         prev.map((o) => (o._id === id ? { ...o, billUrl: link } : o))
-//       );
+//   // Fetch full order details when a row is clicked
+//   const handleRowClick = async (orderId) => {
+//     try {
+//       setDetailLoading(true);
+//       const res = await axios.get(`${API_URL}/api/admin/${orderId}`, {
+//         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//       });
+//       setSelectedOrder(res.data?.order || null);
+//     } catch (err) {
+//       console.error("❌ Error fetching order details:", err.response?.data || err.message);
+//     } finally {
+//       setDetailLoading(false);
 //     }
 //   };
 
-//   // Handle status update from modal
+//   // Sync status update back into the list
 //   const handleStatusUpdated = (orderId, newStatus) => {
 //     setOrders((prev) =>
-//       prev.map((o) =>
-//         o.orderId === orderId ? { ...o, status: newStatus } : o
-//       )
+//       prev.map((o) => (o.orderId === orderId ? { ...o, status: newStatus } : o))
 //     );
+//     setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : prev));
 //   };
 
 //   return (
@@ -99,71 +70,55 @@
 //                 <th className="p-2">Customer</th>
 //                 <th className="p-2">Amount</th>
 //                 <th className="p-2">Status</th>
-//                 <th className="p-2">City/State</th>
+//                 <th className="p-2">City / State</th>
 //                 <th className="p-2">Date</th>
 //                 <th className="p-2">Items</th>
-//                 <th className="p-2">Bill</th>
 //               </tr>
 //             </thead>
 //             <tbody>
 //               {orders.map((order) => (
 //                 <tr
-//                   key={order._id}
+//                   key={order.orderId}
 //                   className="border-t hover:bg-gray-50 cursor-pointer"
-//                   onClick={() => setSelectedOrder(order)} // ✅ open modal on row click
+//                   onClick={() => handleRowClick(order.orderId)}
 //                 >
 //                   <td className="p-2">{order.orderId}</td>
-//                   <td className="p-2">{order.customer?.name || order.customerName}</td>
-//                   <td className="p-2 font-medium">₹{order.totalAmount}</td>
+//                   <td className="p-2">{order.customer?.name}</td>
+//                   <td className="p-2 font-medium">{order.currency}{order.amount}</td>
 //                   <td
-//                     className={`p-2 font-semibold ${
-//                       order.status === "Confirmed"
+//                     className={`p-2 font-semibold capitalize ${
+//                       order.status === "delivered"
 //                         ? "text-green-600"
-//                         : order.status === "Pending"
+//                         : order.status === "pending"
 //                         ? "text-yellow-600"
-//                         : "text-red-600"
+//                         : order.status === "cancelled"
+//                         ? "text-red-600"
+//                         : "text-blue-600"
 //                     }`}
 //                   >
 //                     {order.status}
 //                   </td>
 //                   <td className="p-2">
-//                     {order.shippingAddress?.city}, {order.shippingAddress?.state}
+//                     {order.city}, {order.state}
 //                   </td>
 //                   <td className="p-2">
-//                     {new Date(order.orderDate).toLocaleDateString()}
+//                     {new Date(order.date).toLocaleDateString()}
 //                   </td>
-//                   <td className="p-2">
-//                     {order.orderItems?.length || order.items?.length || 0} items
-//                   </td>
-//                   <td className="p-2">
-//                     {order.billUrl ? (
-//                       <a
-//                         href={order.billUrl}
-//                         target="_blank"
-//                         rel="noopener noreferrer"
-//                         className="text-blue-600 underline"
-//                         onClick={(e) => e.stopPropagation()} // prevent modal open
-//                       >
-//                         View Bill
-//                       </a>
-//                     ) : (
-//                       <button
-//                         onClick={(e) => {
-//                           e.stopPropagation();
-//                           handleUploadBill(order._id);
-//                         }}
-//                         className="text-sm bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
-//                       >
-//                         Upload Bill
-//                       </button>
-//                     )}
-//                   </td>
+//                   <td className="p-2">{order.items} items</td>
 //                 </tr>
 //               ))}
 //             </tbody>
 //           </table>
 
-//           {/* ✅ Admin Order Modal */}
+//           {/* Loading overlay while fetching order detail */}
+//           {detailLoading && (
+//             <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-40">
+//               <p className="bg-white px-6 py-3 rounded shadow text-gray-700">
+//                 Loading order details...
+//               </p>
+//             </div>
+//           )}
+
 //           <AdminOrderModal
 //             open={!!selectedOrder}
 //             onClose={() => setSelectedOrder(null)}
@@ -177,6 +132,7 @@
 //   );
 // }
 
+
 import { useEffect, useState } from "react";
 import axios from "axios";
 import AdminOrderModal from "../components/AdminOrderModal.jsx";
@@ -186,54 +142,142 @@ const API_URL = import.meta.env.VITE_API_URL;
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // Fetch all orders summary
+  //  Pagination state
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  //  Filters state
+  const [filters, setFilters] = useState({
+    status: "",
+    search: "",
+  });
+
+  //  Fetch orders with pagination + filters
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/admin/`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        setLoading(true);
+
+        const res = await axios.get(`${API_URL}/api/admin`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          params: {
+            page,
+            limit: 10,
+            status: filters.status,
+            search: filters.search,
+          },
         });
+
         setOrders(res.data?.orders || []);
+        setTotalPages(res.data?.totalPages || 1);
       } catch (err) {
-        console.error("❌ Error fetching orders:", err.response?.data || err.message);
+        console.error(
+          "❌ Error fetching orders:",
+          err.response?.data || err.message
+        );
       } finally {
         setLoading(false);
       }
     };
 
     fetchOrders();
-  }, []);
+  }, [page, filters]);
 
-  // Fetch full order details when a row is clicked
+  //  Fetch full order details
   const handleRowClick = async (orderId) => {
     try {
       setDetailLoading(true);
+
       const res = await axios.get(`${API_URL}/api/admin/${orderId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
+
       setSelectedOrder(res.data?.order || null);
     } catch (err) {
-      console.error("❌ Error fetching order details:", err.response?.data || err.message);
+      console.error(
+        "❌ Error fetching order details:",
+        err.response?.data || err.message
+      );
     } finally {
       setDetailLoading(false);
     }
   };
 
-  // Sync status update back into the list
+  // ✅ Sync status update
   const handleStatusUpdated = (orderId, newStatus) => {
     setOrders((prev) =>
-      prev.map((o) => (o.orderId === orderId ? { ...o, status: newStatus } : o))
+      prev.map((o) =>
+        o.orderId === orderId ? { ...o, status: newStatus } : o
+      )
     );
-    setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : prev));
+
+    setSelectedOrder((prev) =>
+      prev ? { ...prev, status: newStatus } : prev
+    );
   };
 
   return (
     <div>
       <h2 className="text-2xl font-semibold mb-4">Orders</h2>
 
+      {/*  Filters */}
+      <div className="flex flex-wrap gap-3 mb-4 items-center">
+        {/* Search */}
+        <input
+          type="text"
+          placeholder="Search by name, email, order ID..."
+          className="border px-3 py-2 rounded w-64"
+          value={filters.search}
+          onChange={(e) => {
+            setPage(1);
+            setFilters((prev) => ({
+              ...prev,
+              search: e.target.value,
+            }));
+          }}
+        />
+
+        {/* Status Filter */}
+        <select
+          className="border px-3 py-2 rounded"
+          value={filters.status}
+          onChange={(e) => {
+            setPage(1);
+            setFilters((prev) => ({
+              ...prev,
+              status: e.target.value,
+            }));
+          }}
+        >
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="shipped">Shipped</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+
+        {/* Reset */}
+        <button
+          onClick={() => {
+            setFilters({ status: "", search: "" });
+            setPage(1);
+          }}
+          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+        >
+          Reset
+        </button>
+      </div>
+
+      {/*  Table */}
       {loading ? (
         <p className="text-gray-500">Loading orders...</p>
       ) : orders.length === 0 ? (
@@ -261,7 +305,10 @@ export default function Orders() {
                 >
                   <td className="p-2">{order.orderId}</td>
                   <td className="p-2">{order.customer?.name}</td>
-                  <td className="p-2 font-medium">{order.currency}{order.amount}</td>
+                  <td className="p-2 font-medium">
+                    {order.currency}
+                    {order.amount}
+                  </td>
                   <td
                     className={`p-2 font-semibold capitalize ${
                       order.status === "delivered"
@@ -287,7 +334,33 @@ export default function Orders() {
             </tbody>
           </table>
 
-          {/* Loading overlay while fetching order detail */}
+          {/*  Pagination */}
+          <div className="flex justify-between items-center mt-4">
+            <button
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={page === 1}
+              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Prev
+            </button>
+
+            <span className="text-sm">
+              Page <strong>{page}</strong> of{" "}
+              <strong>{totalPages}</strong>
+            </span>
+
+            <button
+              onClick={() =>
+                setPage((p) => Math.min(p + 1, totalPages))
+              }
+              disabled={page === totalPages}
+              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+
+          {/*  Loading overlay */}
           {detailLoading && (
             <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-40">
               <p className="bg-white px-6 py-3 rounded shadow text-gray-700">
@@ -296,6 +369,7 @@ export default function Orders() {
             </div>
           )}
 
+          {/*  Modal */}
           <AdminOrderModal
             open={!!selectedOrder}
             onClose={() => setSelectedOrder(null)}
@@ -308,4 +382,3 @@ export default function Orders() {
     </div>
   );
 }
-
